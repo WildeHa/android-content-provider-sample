@@ -33,17 +33,21 @@ public class PeopleActivity extends FragmentActivity implements
     super.onCreate(savedInstanceState);
     setContentView(R.layout.people);
 
-    mListView = (ListView) findViewById(android.R.id.list);
+    mListView = (ListView)findViewById(android.R.id.list);
     mListView.setOnItemClickListener(this);
     registerForContextMenu(mListView);
-    
-    String[] fromColumns = { Person.Columns.FIRST, Person.Columns.LAST };
-    int[] toViews = { android.R.id.text1, android.R.id.text2 };
-    
+
+    String[] fromColumns = {
+        Person.Columns.FIRST, Person.Columns.LAST
+    };
+    int[] toViews = {
+        android.R.id.text1, android.R.id.text2
+    };
+
     // Create an empty adapter we will use to display the loaded data.
     // We pass null for the cursor, then update it in onLoadFinished()
-    mAdapter = new SimpleCursorAdapter(this,
-        android.R.layout.simple_list_item_2, null, fromColumns, toViews, 0);
+    mAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, null,
+        fromColumns, toViews, 0);
     mListView.setAdapter(mAdapter);
 
     getSupportLoaderManager().initLoader(PEOPLE_LOADER_ID, null, this);
@@ -52,15 +56,15 @@ public class PeopleActivity extends FragmentActivity implements
   @Override
   public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     switch (id) {
-    case PEOPLE_LOADER_ID:
-      return new CursorLoader(this, // context
-          Person.PEOPLE_URI, // content provider URI
-          Person.Columns.ALL, // Columns
-          null, // selection
-          null, // selection args
-          null); // order
-    default:
-      return null;
+      case PEOPLE_LOADER_ID:
+        return new CursorLoader(this, // context
+            Person.PEOPLE_URI, // content provider URI
+            Person.Columns.ALL, // Columns
+            null, // selection
+            null, // selection args
+            null); // order
+      default:
+        return null;
     }
   }
 
@@ -86,6 +90,11 @@ public class PeopleActivity extends FragmentActivity implements
       newPerson();
       return true;
     }
+    if (item.getItemId() == R.id.menu_settings) {
+      Intent intent = new Intent(this, SettingsActivity.class);
+      startActivity(intent);
+      return true;
+    }
     return false;
   }
 
@@ -96,10 +105,8 @@ public class PeopleActivity extends FragmentActivity implements
     startActivity(intent);
   }
 
-  
   @Override
-  public void onItemClick(AdapterView<?> parent, View view, int position,
-      long id) {
+  public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_EDIT);
     intent.setData(ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id));
@@ -107,17 +114,16 @@ public class PeopleActivity extends FragmentActivity implements
   }
 
   @Override
-  public void onCreateContextMenu(ContextMenu menu, View v,
-      ContextMenuInfo menuInfo) {
-    AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-    Person person = new Person((Cursor )mListView.getItemAtPosition(info.position));
+  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)menuInfo;
+    Person person = new Person((Cursor)mListView.getItemAtPosition(info.position));
     menu.setHeaderTitle(person.first + " " + person.last);
     getMenuInflater().inflate(R.menu.people_context, menu);
   }
 
   @Override
   public boolean onContextItemSelected(MenuItem item) {
-    AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+    AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
     if (item.getItemId() == R.id.menu_delete) {
       deletePerson(info.id);
       return true;

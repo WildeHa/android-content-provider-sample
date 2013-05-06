@@ -4,5 +4,9 @@
         android:id="@+id/menu_new"
         android:showAsAction="ifRoom|withText"
         android:title="New"/>
+    
+    <item
+        android:id="@+id/menu_settings"
+        android:title="Settings" />
 
 </menu>
