@@ -1,10 +1,17 @@
 
 package com.example.people;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
+import android.app.AlertDialog;
+import android.app.Dialog;
 import android.content.ContentUris;
+import android.content.ContentValues;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.support.v4.app.LoaderManager;
@@ -20,11 +27,17 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
+import android.widget.Toast;
 
 public class PeopleActivity extends FragmentActivity implements
     LoaderManager.LoaderCallbacks<Cursor>, OnItemClickListener {
 
   private static final int PEOPLE_LOADER_ID = 0;
+
+  private static final int DIALOG_SELECT_ACCOUNT = 0;
+
+  private Settings mSettings;
+  private AccountManager mAccountManager;
 
   private ListView mListView;
   private SimpleCursorAdapter mAdapter;
@@ -33,6 +46,9 @@ public class PeopleActivity extends FragmentActivity implements
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
     setContentView(R.layout.people);
+
+    mSettings = new Settings(this);
+    mAccountManager = AccountManager.get(this);
 
     mListView = (ListView)findViewById(android.R.id.list);
     mListView.setOnItemClickListener(this);
@@ -59,7 +75,7 @@ public class PeopleActivity extends FragmentActivity implements
     switch (id) {
       case PEOPLE_LOADER_ID:
         return new CursorLoader(this, // context
-            Person.PEOPLE_URI, // content provider URI
+            PeopleProvider.PEOPLE_URI, // content provider URI
             Person.Columns.ALL, // Columns
             null, // selection
             null, // selection args
@@ -91,6 +107,10 @@ public class PeopleActivity extends FragmentActivity implements
       newPerson();
       return true;
     }
+    if (item.getItemId() == R.id.menu_sync) {
+      syncInBackground();
+      return true;
+    }
     if (item.getItemId() == R.id.menu_settings) {
       Intent intent = new Intent(this, SettingsActivity.class);
       startActivity(intent);
@@ -102,7 +122,7 @@ public class PeopleActivity extends FragmentActivity implements
   private void newPerson() {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_INSERT);
-    intent.setData(Person.PEOPLE_URI);
+    intent.setData(PeopleProvider.PEOPLE_URI);
     startActivity(intent);
   }
 
@@ -110,7 +130,7 @@ public class PeopleActivity extends FragmentActivity implements
   public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_EDIT);
-    intent.setData(ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id));
+    intent.setData(ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, id));
     startActivity(intent);
   }
 
@@ -133,7 +153,120 @@ public class PeopleActivity extends FragmentActivity implements
   }
 
   private void deletePerson(long id) {
-    Uri uri = ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id);
+    Uri uri = ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, id);
     getContentResolver().delete(uri, null, null);
+  }
+
+  private void syncInBackground() {
+    String accountName = mSettings.getSyncAccount2();
+    if (accountName == null) {
+      selectAccount();
+      return;
+    }
+    new AsyncTask<String, Void, Boolean>() {
+      @Override
+      protected Boolean doInBackground(String... params) {
+        try {
+          String accountName = params[0];
+          sync(accountName);
+          return true;
+        } catch (Exception e) {
+          // TODO: log
+          return false;
+        }
+      }
+
+      @Override
+      protected void onPostExecute(Boolean synced) {
+        if (synced) {
+          Toast.makeText(PeopleActivity.this, "Synced!", Toast.LENGTH_SHORT).show();
+        } else {
+          // TODO: silent, but show error in settings
+          Toast.makeText(PeopleActivity.this, "Sync error!", Toast.LENGTH_SHORT).show();
+        }
+      }
+    }.execute(accountName);
+  }
+
+  private void sync(String accountName) {
+    Uri syncUri = PeopleProvider.SYNC_URI_BASE.buildUpon().appendPath(accountName).build();
+    // May take a lot of syncs (20+)
+    while (true) {
+      Cursor cursor = getContentResolver().query(syncUri, Person.Columns.ALL, null, null, null);
+      cursor.moveToFirst();
+      String result = cursor.getString(0);
+      cursor.close();
+      if (result.startsWith("0;")) {
+        return; // All done
+      }
+    }
+  }
+
+  private void selectAccount() {
+    Account[] accounts = mAccountManager.getAccountsByType("com.google");
+    if (accounts.length == 0) {
+      // TODO: error
+    } else if (accounts.length == 1) {
+      setAccountInBackground(accounts[0].name);
+    } else {
+      showDialog(DIALOG_SELECT_ACCOUNT);
+    }
+  }
+
+  private Dialog createAccountPickerDialog() {
+    Account[] accounts = mAccountManager.getAccountsByType("com.google");
+    final String[] accountNames = new String[accounts.length];
+    final int[] selectedAccountIndices = new int[1];
+    for (int i = 0; i < accounts.length; i++) {
+      accountNames[i] = accounts[i].name;
+    }
+    AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+    dialog.setTitle("Choose an account");
+    dialog.setSingleChoiceItems(accountNames, 0, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which) {
+        selectedAccountIndices[0] = which;
+      }
+    });
+    dialog.setCancelable(true);
+    dialog.setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+      @Override
+      public void onClick(DialogInterface dialog, int which) {
+        setAccountInBackground(accountNames[selectedAccountIndices[0]]);
+      }
+    });
+    return dialog.create();
+  }
+
+  private void setAccountInBackground(String accountName) {
+    new AsyncTask<String, Void, Void>() {
+      @Override
+      protected Void doInBackground(String... params) {
+        String accountName = params[0];
+        setAccount(accountName);
+        return null;
+      }
+
+      @Override
+      protected void onPostExecute(Void result) {
+        syncInBackground();
+      }
+    }.execute(accountName);
+  }
+
+  private void setAccount(String accountName) {
+    ContentValues values = new ContentValues();
+    values.put(PeopleProvider.KEY_USER_ACCOUNT_NAME, accountName);
+    getContentResolver().insert(PeopleProvider.USERS_URI, values);
+    mSettings.setSyncAccount2(accountName);
+  }
+
+  @Override
+  @Deprecated
+  protected Dialog onCreateDialog(int id) {
+    if (DIALOG_SELECT_ACCOUNT == id) {
+      return createAccountPickerDialog();
+    }
+    return null;
   }
 }

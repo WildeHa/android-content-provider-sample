@@ -48,7 +48,6 @@ public class EditPersonActivity extends Activity {
     }
 
     Cursor cursor = getContentResolver().query(mUri, Person.Columns.ALL, null, null, null);
-    int count = cursor.getCount();
     cursor.moveToFirst();
     Person person = new Person(cursor);
     

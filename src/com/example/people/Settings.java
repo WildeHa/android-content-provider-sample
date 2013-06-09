@@ -1,3 +1,4 @@
+
 package com.example.people;
 
 import android.accounts.Account;
@@ -7,8 +8,9 @@ import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
 public class Settings {
-  
+
   private static final String KEY_ACCOUNT_NAME = "accountName";
+  private static final String KEY_ACCOUNT_NAME2 = "accountName2";
 
   private Context mContext;
   private SharedPreferences mPreferences;
@@ -17,7 +19,7 @@ public class Settings {
     mContext = context;
     mPreferences = PreferenceManager.getDefaultSharedPreferences(context);
   }
-  
+
   public String getSyncAccount() {
     String accountName = mPreferences.getString(KEY_ACCOUNT_NAME, "");
     if (accountName.isEmpty()) {
@@ -28,8 +30,16 @@ public class Settings {
     }
     return accountName;
   }
-  
+
   public void setSyncAccount(String accountName) {
     mPreferences.edit().putString(KEY_ACCOUNT_NAME, accountName).commit();
+  }
+
+  public String getSyncAccount2() {
+    return mPreferences.getString(KEY_ACCOUNT_NAME2, null);
+  }
+
+  public void setSyncAccount2(String accountName) {
+    mPreferences.edit().putString(KEY_ACCOUNT_NAME2, accountName).commit();
   }
 }
