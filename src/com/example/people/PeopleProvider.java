@@ -31,13 +31,12 @@ public class PeopleProvider extends ContentProvider {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-      db.execSQL("DROP TABLE IF EXISTS " + Person.TABLE);
-      onCreate(db);
+      // Upgrade logic goes here
     }
   }
   
-  private static final int PEOPLE_OP = 1;
-  private static final int PEOPLE_ID_OP = 2;
+  private static final int PEOPLE_OP = 1;  // List, Insert
+  private static final int PEOPLE_ID_OP = 2;  // Get, Update, Delete
   
   private static final UriMatcher sUriMatcher;
   private static HashMap<String, String> sProjectionMap;
@@ -46,7 +45,8 @@ public class PeopleProvider extends ContentProvider {
     sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
     sUriMatcher.addURI(Person.AUTHORITY, "people", PEOPLE_OP);
     sUriMatcher.addURI(Person.AUTHORITY, "people/#", PEOPLE_ID_OP);
-    
+
+    // Content provider exposes the same columns as underlying table
     sProjectionMap = new HashMap<String, String>();
     sProjectionMap.put(Person.Columns._ID, Person.Columns._ID);
     sProjectionMap.put(Person.Columns.FIRST, Person.Columns.FIRST);
@@ -68,6 +68,7 @@ public class PeopleProvider extends ContentProvider {
     qb.setTables(Person.TABLE);
     qb.setProjectionMap(sProjectionMap);
 
+    // Return a specific person if the URI has an id; otherwise return everyone.
     switch (sUriMatcher.match(uri)) {
     case PEOPLE_OP:
       break;
@@ -75,7 +76,6 @@ public class PeopleProvider extends ContentProvider {
       qb.appendWhere(Person.Columns._ID + "=" + ContentUris.parseId(uri));
       break;
     default:
-      // If the URI doesn't match any of the known patterns, throw an exception.
       throw new IllegalArgumentException("Unknown URI " + uri);
     }
 
@@ -88,6 +88,9 @@ public class PeopleProvider extends ContentProvider {
         null,          // don't filter by row groups
         sortOrder      // The sort order
     );
+
+    // Callers will get notified if the content at this URI changes.
+    // For example, if a new person is inserted or an existing one is updated.
     c.setNotificationUri(getContext().getContentResolver(), uri);
     return c;
   }

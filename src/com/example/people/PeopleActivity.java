@@ -1,3 +1,4 @@
+
 package com.example.people;
 
 import android.content.ContentUris;
@@ -36,14 +37,18 @@ public class PeopleActivity extends FragmentActivity implements
     mListView = (ListView) findViewById(android.R.id.list);
     mListView.setOnItemClickListener(this);
     registerForContextMenu(mListView);
-    
-    String[] fromColumns = { Person.Columns.FIRST, Person.Columns.LAST };
-    int[] toViews = { android.R.id.text1, android.R.id.text2 };
-    
+
+    String[] fromColumns = {
+        Person.Columns.FIRST, Person.Columns.LAST
+    };
+    int[] toViews = {
+        android.R.id.text1, android.R.id.text2
+    };
+
     // Create an empty adapter we will use to display the loaded data.
     // We pass null for the cursor, then update it in onLoadFinished()
-    mAdapter = new SimpleCursorAdapter(this,
-        android.R.layout.simple_list_item_2, null, fromColumns, toViews, 0);
+    mAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, null,
+        fromColumns, toViews, 0);
     mListView.setAdapter(mAdapter);
 
     getSupportLoaderManager().initLoader(PEOPLE_LOADER_ID, null, this);
@@ -52,15 +57,10 @@ public class PeopleActivity extends FragmentActivity implements
   @Override
   public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     switch (id) {
-    case PEOPLE_LOADER_ID:
-      return new CursorLoader(this, // context
-          Person.PEOPLE_URI, // content provider URI
-          Person.Columns.ALL, // Columns
-          null, // selection
-          null, // selection args
-          null); // order
-    default:
-      return null;
+      case PEOPLE_LOADER_ID:
+        return new CursorLoader(this, Person.PEOPLE_URI, Person.Columns.ALL, null, null, null);
+      default:
+        return null;
     }
   }
 
@@ -96,10 +96,12 @@ public class PeopleActivity extends FragmentActivity implements
     startActivity(intent);
   }
 
-  
   @Override
-  public void onItemClick(AdapterView<?> parent, View view, int position,
-      long id) {
+  public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    editPerson(id);
+  }
+
+  private void editPerson(long id) {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_EDIT);
     intent.setData(ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id));
@@ -107,10 +109,9 @@ public class PeopleActivity extends FragmentActivity implements
   }
 
   @Override
-  public void onCreateContextMenu(ContextMenu menu, View v,
-      ContextMenuInfo menuInfo) {
+  public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
     AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-    Person person = new Person((Cursor )mListView.getItemAtPosition(info.position));
+    Person person = new Person((Cursor) mListView.getItemAtPosition(info.position));
     menu.setHeaderTitle(person.first + " " + person.last);
     getMenuInflater().inflate(R.menu.people_context, menu);
   }
