@@ -69,4 +69,9 @@ public final class Person implements Parcelable {
   public int describeContents() {
     return 0;
   }
+  
+  @Override
+  public String toString() {
+    return first + " " + last;
+  }
 }

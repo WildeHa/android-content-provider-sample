@@ -2,6 +2,7 @@
 package com.example.people;
 
 import android.content.ContentUris;
+import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -19,6 +20,7 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.AdapterContextMenuInfo;
 import android.widget.AdapterView.OnItemClickListener;
+import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class PeopleActivity extends FragmentActivity implements
@@ -27,7 +29,8 @@ public class PeopleActivity extends FragmentActivity implements
   private static final int PEOPLE_LOADER_ID = 0;
 
   private ListView mListView;
-  private SimpleCursorAdapter mAdapter;
+  //private SimpleCursorAdapter mAdapter;
+  private PeopleListAdapter mAdapter;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,18 +50,19 @@ public class PeopleActivity extends FragmentActivity implements
 
     // Create an empty adapter we will use to display the loaded data.
     // We pass null for the cursor, then update it in onLoadFinished()
-    mAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, null,
-        fromColumns, toViews, 0);
+//    mAdapter = new SimpleCursorAdapter(this, android.R.layout.simple_list_item_2, null,
+//        fromColumns, toViews, 0);
+    mAdapter = new PeopleListAdapter(this);
     mListView.setAdapter(mAdapter);
 
     getSupportLoaderManager().initLoader(PEOPLE_LOADER_ID, null, this);
   }
-
+  
   @Override
   public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     switch (id) {
       case PEOPLE_LOADER_ID:
-        return new CursorLoader(this, Person.PEOPLE_URI, Person.Columns.ALL, null, null, null);
+        return new CursorLoader(this, Person.PEOPLE_URI, Person.Columns.ALL, null, null, Person.Columns.FIRST);
       default:
         return null;
     }
@@ -111,7 +115,7 @@ public class PeopleActivity extends FragmentActivity implements
   @Override
   public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
     AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) menuInfo;
-    Person person = new Person((Cursor) mListView.getItemAtPosition(info.position));
+    Person person = (Person) mListView.getItemAtPosition(info.position);
     menu.setHeaderTitle(person.first + " " + person.last);
     getMenuInflater().inflate(R.menu.people_context, menu);
   }
