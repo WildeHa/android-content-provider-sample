@@ -9,27 +9,31 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.SectionIndexer;
 import android.widget.TextView;
 
-public class PeopleListAdapter extends BaseAdapter {
+public class PeopleListAdapter extends BaseAdapter implements SectionIndexer {
 
   private static final int TYPE_PERSON = 0;
   private static final int TYPE_HEADER = 1;
 
   private final LayoutInflater mLayoutInflater;
   private Object[] mItems;
+  private int[] mHeaderPositions;
 
   public PeopleListAdapter(Context context) {
     mLayoutInflater = LayoutInflater.from(context);
     mItems = new Object[0];
+    mHeaderPositions = new int[0];
   }
 
   public void swapCursor(Cursor cursor) {
     if (cursor == null) {
-      setItems(new Object[0]);
+      setItems(new Object[0], new int[0]);
       return;
     }
     List<Object> items = new ArrayList<Object>();
+    List<Integer> headerPositions = new ArrayList<Integer>();
 
     String lastHeader = null;
     cursor.moveToFirst();
@@ -42,16 +46,22 @@ public class PeopleListAdapter extends BaseAdapter {
         header = Character.toString(person.first.charAt(0));
       }
       if (!header.equals(lastHeader)) {
+        headerPositions.add(items.size());
         items.add(header);
         lastHeader = header;
       }
       items.add(person);
     }
-    setItems(items.toArray());
+    int[] headerPositionsArray = new int[headerPositions.size()];
+    for (int i = 0; i < headerPositions.size(); i++) {
+      headerPositionsArray[i] = headerPositions.get(i);
+    }
+    setItems(items.toArray(), headerPositionsArray);
   }
 
-  public void setItems(Object[] items) {
+  public void setItems(Object[] items, int[] headerPositions) {
     mItems = items;
+    mHeaderPositions = headerPositions;
     notifyDataSetChanged();
   }
 
@@ -113,5 +123,34 @@ public class PeopleListAdapter extends BaseAdapter {
     }
 
     return convertView;
+  }
+
+  @Override
+  public Object[] getSections() {
+    Object[] headers = new Object[mHeaderPositions.length];
+    for (int i = 0; i < mHeaderPositions.length; i++) {
+      headers[i] = getItem(mHeaderPositions[i]);
+    }
+    return headers;
+  }
+
+  @Override
+  public int getPositionForSection(int section) {
+    if (section >= mHeaderPositions.length) {
+      section = mHeaderPositions.length - 1;
+    } else if (section < 0) {
+      section = 0;
+    }
+    return mHeaderPositions[section];
+  }
+
+  @Override
+  public int getSectionForPosition(int position) {
+    for (int i = 0; i < mHeaderPositions.length; i++) {
+      if (position < mHeaderPositions[i]) {
+        return i - 1;
+      }
+    }
+    return mHeaderPositions.length - 1;
   }
 }
