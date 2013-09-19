@@ -12,7 +12,8 @@ import android.widget.BaseAdapter;
 import android.widget.SectionIndexer;
 import android.widget.TextView;
 
-public class PeopleListAdapter extends BaseAdapter implements SectionIndexer {
+public class PeopleListAdapter extends BaseAdapter implements SectionIndexer,
+    StickyHeaderListView.HeaderIndexer {
 
   private static final int TYPE_PERSON = 0;
   private static final int TYPE_HEADER = 1;
@@ -129,7 +130,7 @@ public class PeopleListAdapter extends BaseAdapter implements SectionIndexer {
   public Object[] getSections() {
     Object[] headers = new Object[mHeaderPositions.length];
     for (int i = 0; i < mHeaderPositions.length; i++) {
-      headers[i] = getItem(mHeaderPositions[i]);
+      headers[i] = " "; //getItem(mHeaderPositions[i]);
     }
     return headers;
   }
@@ -152,5 +153,29 @@ public class PeopleListAdapter extends BaseAdapter implements SectionIndexer {
       }
     }
     return mHeaderPositions.length - 1;
+  }
+
+  @Override
+  public int getHeaderPositionFromItemPosition(int position) {
+    int section = getSectionForPosition(position);
+    if (section < 0 || section >= mHeaderPositions.length) {
+      return -1;
+    }
+    return mHeaderPositions[section];
+  }
+
+  @Override
+  public int getHeaderItemsNumber(int headerPosition) {
+    int section = getSectionForPosition(headerPosition);
+    if (section < 0 || section >= mHeaderPositions.length) {
+      return -1;
+    }
+    int positionAfterLastSectionItem;
+    if (section == mHeaderPositions.length - 1) {
+      positionAfterLastSectionItem = mItems.length;
+    } else {
+      positionAfterLastSectionItem = mHeaderPositions[section + 1];
+    }
+    return positionAfterLastSectionItem - mHeaderPositions[section] - 1;
   }
 }
