@@ -1,20 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    android:orientation="vertical"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="8dp">
+    android:orientation="vertical"
+    android:padding="16dp" >
 
-  <EditText
-      android:id="@+id/first"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:hint="First" />
-  
-  <EditText
-      android:id="@+id/last"
-      android:layout_width="match_parent"
-      android:layout_height="wrap_content"
-      android:hint="Last" />
+    <EditText
+        android:id="@+id/first"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/first_name_hint"
+        android:inputType="text|textCapWords" />
+
+    <EditText
+        android:id="@+id/last"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/last_name_hint"
+        android:inputType="text|textCapWords" />
 
 </LinearLayout>

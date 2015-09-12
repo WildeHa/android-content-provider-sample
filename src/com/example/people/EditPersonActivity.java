@@ -1,4 +1,3 @@
-
 package com.example.people;
 
 import android.app.Activity;
@@ -15,14 +14,7 @@ import android.widget.Toast;
 
 public class EditPersonActivity extends Activity {
 
-  private static final String EXTRA_ORIGINAL_PERSON = "com.example.people.EXTRAS.originalPerson";
-
-  private boolean mDeleted;
-  private Uri mUri;
-
-  // The Person as it existed when this activity first started.
-  // Revert to this if the user taps Cancel.
-  private Person mOriginalPerson;
+  private Person mPerson;
 
   private EditText mFirstEditText;
   private EditText mLastEditText;
@@ -31,60 +23,42 @@ public class EditPersonActivity extends Activity {
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    // Get the person id (if available) from the intent data URI.
-    Intent intent = getIntent();
-    long id = -1;
-    try {
-      id = ContentUris.parseId(intent.getData());
-    } catch (NumberFormatException e) {
-      // That's ok; the caller didn't send a person id because
-      // they are creating a new one. It's somewhat bad form to
-      // use exceptions for flow control, but whatever, this is
-      // just a sample app.
-    }
-
-    if (id == -1) {
-      // Need to create a new Person.
-      ContentValues defaultValues = new ContentValues();
-      defaultValues.put(Person.Columns.FIRST, "");
-      defaultValues.put(Person.Columns.LAST, "");
-      mUri = getContentResolver().insert(intent.getData(), defaultValues);
-      if (mUri == null) {
-        Toast.makeText(this, "Error creating person", Toast.LENGTH_SHORT).show();
-        finish();
-        return;
-      }
-      // Update the intent data URI so it includes the new person id.
-      // Then if the activity is restarted (e.g. the screen is rotated),
-      // we preserve the id of the person we just created above.
-      intent.setData(mUri);
-      setIntent(intent);
-    } else {
-      // We're editing an existing person.
-      mUri = intent.getData();
-    }
-
-    // Load the Person from the content provider.
-    Cursor cursor = getContentResolver().query(mUri, Person.Columns.ALL, null, null, null);
-    if (!cursor.moveToFirst()) {
-      Toast.makeText(this, "Missing person", Toast.LENGTH_SHORT).show();
+    mPerson = initializePerson();
+    if (mPerson == null) {
+      Toast.makeText(this, "Could not load person", Toast.LENGTH_SHORT).show();
       finish();
       return;
-    }
-    Person person = new Person(cursor);
-
-    // Save/restore the state of the Person as it existed when the activity
-    // first started. We revert to it if the user taps Cancel.
-    if (savedInstanceState != null) {
-      mOriginalPerson = savedInstanceState.getParcelable(EXTRA_ORIGINAL_PERSON);
-    } else {
-      mOriginalPerson = person;
     }
 
     setContentView(R.layout.edit_person);
     mFirstEditText = (EditText) findViewById(R.id.first);
     mLastEditText = (EditText) findViewById(R.id.last);
 
+    populateForm(mPerson);
+  }
+
+  private Person initializePerson() {
+    Intent intent = getIntent();
+    if (Intent.ACTION_INSERT.equals(intent.getAction())) {
+      return new Person();
+    } else {
+      // Load existing person from content provider
+      long id;
+      try {
+        id = ContentUris.parseId(intent.getData());
+      } catch (NumberFormatException e) {
+        return null;
+      }
+      Uri uri = ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, id);
+      Cursor cursor = getContentResolver().query(uri, Person.Columns.ALL, null, null, null);
+      if (cursor == null || !cursor.moveToFirst()) {
+        return null;
+      }
+      return new Person(cursor);
+    }
+  }
+
+  private void populateForm(Person person) {
     mFirstEditText.setText(person.first);
     mLastEditText.setText(person.last);
   }
@@ -109,53 +83,25 @@ public class EditPersonActivity extends Activity {
   }
 
   private void save() {
-    // The actual save operation happens in onPause.
-    // All we need to do here is finish the activity.
+    mPerson.first = mFirstEditText.getText().toString();
+    mPerson.last = mLastEditText.getText().toString();
+
+    ContentValues values = new ContentValues();
+    mPerson.populateValues(values);
+
+    if (mPerson.id == -1) {
+      getContentResolver().insert(PeopleProvider.PEOPLE_URI, values);
+    } else {
+      Uri uri = ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, mPerson.id);
+      getContentResolver().update(uri, values, null, null);
+    }
+
     setResult(Activity.RESULT_OK);
     finish();
   }
 
   private void discard() {
-    if (getIntent().getAction().equals(Intent.ACTION_INSERT)) {
-      // We've already created a new Person; now we need to delete it.
-      delete();
-    } else {
-      // Revert to the original Person before we save.
-      mFirstEditText.setText(mOriginalPerson.first);
-      mLastEditText.setText(mOriginalPerson.last);
-    }
     setResult(Activity.RESULT_CANCELED);
     finish();
-  }
-
-  private void delete() {
-    getContentResolver().delete(mUri, null, null);
-    mDeleted = true;
-  }
-
-  @Override
-  protected void onPause() {
-    super.onPause();
-    if (mDeleted) {
-      return;
-    }
-    // Save the Person any time the activity goes into the background,
-    // even if the user has not explicitly saved his changes. For example,
-    // he might have tapped the Home button to start another activity, or he
-    // might have received an incoming phone call.
-    savePerson();
-  }
-
-  private void savePerson() {
-    ContentValues values = new ContentValues();
-    values.put(Person.Columns.FIRST, mFirstEditText.getText().toString());
-    values.put(Person.Columns.LAST, mLastEditText.getText().toString());
-    getContentResolver().update(mUri, values, null, null);
-  }
-
-  @Override
-  protected void onSaveInstanceState(Bundle outState) {
-    super.onSaveInstanceState(outState);
-    outState.putParcelable(EXTRA_ORIGINAL_PERSON, mOriginalPerson);
   }
 }

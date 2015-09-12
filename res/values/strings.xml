@@ -2,5 +2,12 @@
 <resources>
 
     <string name="app_name">Content Provider Sample</string>
+    <string name="people_activity_title">People</string>
+    <string name="new_person">New</string>
+    <string name="delete">Delete</string>
+    <string name="first_name_hint">First</string>
+    <string name="last_name_hint">Last</string>
+    <string name="save">Save</string>
+    <string name="cancel">Cancel</string>
 
 </resources>

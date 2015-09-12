@@ -5,30 +5,33 @@
     android:versionName="1.0" >
 
     <uses-sdk
-        android:minSdkVersion="10"
-        android:targetSdkVersion="17" />
+        android:minSdkVersion="9"
+        android:targetSdkVersion="19" />
 
     <application
         android:allowBackup="true"
         android:icon="@drawable/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/AppTheme" >
-       <provider android:name="PeopleProvider"
-           android:authorities="com.example.people.provider"
-           android:exported="false">
-       </provider>
-       <activity
-           android:name="com.example.people.PeopleActivity"
-           android:label="@string/app_name" >
-           <intent-filter>
-               <action android:name="android.intent.action.MAIN" />
-               <category android:name="android.intent.category.LAUNCHER" />
-           </intent-filter>
-       </activity>
-       <activity
-           android:name="com.example.people.EditPersonActivity"
-           android:label="Person">
-       </activity>
+
+        <activity
+            android:name="com.example.people.PeopleActivity"
+            android:label="@string/people_activity_title" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.example.people.EditPersonActivity"
+            android:windowSoftInputMode="adjustResize"
+            android:label="Person" >
+        </activity>
+        <provider
+            android:name="PeopleProvider"
+            android:authorities="com.example.people.provider"
+            android:exported="false" >
+        </provider>
     </application>
 
 </manifest>

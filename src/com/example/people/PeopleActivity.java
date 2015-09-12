@@ -1,4 +1,3 @@
-
 package com.example.people;
 
 import android.content.ContentUris;
@@ -58,7 +57,8 @@ public class PeopleActivity extends FragmentActivity implements
   public Loader<Cursor> onCreateLoader(int id, Bundle args) {
     switch (id) {
       case PEOPLE_LOADER_ID:
-        return new CursorLoader(this, Person.PEOPLE_URI, Person.Columns.ALL, null, null, null);
+        return new CursorLoader(this, PeopleProvider.PEOPLE_URI, Person.Columns.ALL, null, null,
+            Person.Columns.FIRST);
       default:
         return null;
     }
@@ -92,7 +92,7 @@ public class PeopleActivity extends FragmentActivity implements
   private void newPerson() {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_INSERT);
-    intent.setData(Person.PEOPLE_URI);
+    intent.setData(PeopleProvider.PEOPLE_URI);
     startActivity(intent);
   }
 
@@ -104,7 +104,7 @@ public class PeopleActivity extends FragmentActivity implements
   private void editPerson(long id) {
     Intent intent = new Intent(this, EditPersonActivity.class);
     intent.setAction(Intent.ACTION_EDIT);
-    intent.setData(ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id));
+    intent.setData(ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, id));
     startActivity(intent);
   }
 
@@ -127,7 +127,7 @@ public class PeopleActivity extends FragmentActivity implements
   }
 
   private void deletePerson(long id) {
-    Uri uri = ContentUris.withAppendedId(Person.PEOPLE_ID_URI_BASE, id);
+    Uri uri = ContentUris.withAppendedId(PeopleProvider.PEOPLE_ID_URI_BASE, id);
     getContentResolver().delete(uri, null, null);
   }
 }
